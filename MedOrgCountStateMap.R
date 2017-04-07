@@ -1,3 +1,5 @@
+#==R Cafe (A club supported by OSU Center for Health Systems Innovation)
+#==Author: Akash Gupta
 library(dplyr); library(ggmap); library(stringr); library(maps)
 #=== Read the data file
 medOrganization = read.csv("/media/akash/0C749DFF749DEBA8/Users/Akash/Documents/Data/Medicare_DoctorPayment/Medicare_MedOrganization_MeanPayments.csv")
