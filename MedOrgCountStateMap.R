@@ -22,3 +22,26 @@ statesUSA = merge(x = statesUSA, y = statesMedOrg, by.x = "StateAbb", by.y = "St
 #===Plot map
 base1 = ggplot(data = statesUSA) + geom_polygon(mapping = aes(x = long, y = lat, group = group, fill = NumMedOrg), color = "white") +theme_bw() + theme(axis.text = element_blank(),axis.line = element_blank(),axis.ticks = element_blank(),panel.border = element_blank(), panel.grid = element_blank(), axis.title = element_blank())
 
+#===Providers vs. Payment Claimed
+
+providerPayment = medOrganization %>% select(Med_Organization_Identifier, TotalPayment) %>% group_by(NPI) %>% summarise(TotalProviderPayment = sum(TotalPayment)) %>% arrange(TotalProviderPayment)
+
+providerPayment$OrgQuantile = cut(providerPayment$TotalProviderPayment, breaks = quantile(providerPayment$TotalProviderPayment, probs = seq(0, 1, 0.05)), include.lowest = T, ordered_result = T)
+
+temp = providerPayment %>% group_by(OrgQuantile) %>% summarise(Payment = sum(TotalProviderPayment)) %>% mutate(CumAmtPayment = cumsum(Payment))%>% mutate(PercentAmtClaim = CumAmtPayment*100/sum(Payment))
+levels(temp$OrgQuantile) = seq(5, 100, 5)
+
+ggplot(data = temp) + geom_path(mapping = aes(x = as.numeric(as.character(OrgQuantile)), y = PercentAmtClaim)) + xlab("Healthcare Provider Ranking (Percentile)") + ylab("Percentage of Total Amount Payment")
+rm(temp)
+
+#=== Medical organization payment
+medOrgPayment = medOrganization %>% mutate(TotalPayment = Med_Service_Cnt*Med_Organization_Payment_Received)
+medOrgPayment = medOrgPayment %>% select(Med_Organization_Identifier, Med_Organization_Name, Med_Organization_Zip, TotalPayment) %>% group_by(Med_Organization_Name, Med_Organization_Zip) %>% dplyr::summarise(TotalProviderPayment = sum(TotalPayment)) %>% arrange(TotalProviderPayment)
+
+medOrgPayment$OrgQuantile = cut(medOrgPayment$TotalProviderPayment, breaks = quantile(medOrgPayment$TotalProviderPayment, probs = seq(0, 1, 0.05)), include.lowest = T, ordered_result = T)
+
+temp = medOrgPayment %>% group_by(OrgQuantile) %>% summarise(Payment = sum(TotalProviderPayment)) %>% mutate(CumAmtPayment = cumsum(Payment))%>% mutate(PercentAmtClaim = CumAmtPayment*100/sum(Payment))
+levels(temp$OrgQuantile) = seq(5, 100, 5)
+
+ggplot(data = temp) + geom_path(mapping = aes(x = as.numeric(as.character(OrgQuantile)), y = PercentAmtClaim), color = "red") + xlab("Healthcare Provider Ranking (Percentile)") + ylab("Percentage of Total Amount Payment") + theme_bw()
+rm(temp, medOrgPayment)
